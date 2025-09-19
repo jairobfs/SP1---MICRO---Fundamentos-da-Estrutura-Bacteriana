@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia Interativo de Infecções Bacterianas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-main: #0A0A0A;
+            --bg-card: #1A1A1A;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B0B0B0;
+            --accent-primary: #00FF9D;
+            --accent-secondary: #00B8FF;
+            --border-color: #333333;
+            --highlight-color: #FF00FF;
+            --neon-blue: #00F3FF;
+            --neon-pink: #FF00FF;
+            --neon-green: #00FF9D;
+            --neon-yellow: #FFFF00;
+        }
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 243, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+            position: relative;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent-primary);
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 100%;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-primary);
+            text-shadow: 0 0 10px var(--accent-primary);
+        }
+        .pathogen-btn {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .pathogen-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 157, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        .pathogen-btn:hover::before {
+            left: 100%;
+        }
+        .pathogen-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 255, 157, 0.3);
+            border-color: var(--accent-primary);
+        }
+        .pathogen-btn.active {
+            background-color: rgba(0, 255, 157, 0.1);
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(0, 255, 157, 0.5);
+        }
+        .content-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .content-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
+            opacity: 0.7;
+        }
+        .highlight, .interactive-text.highlighted {
+            background: transparent;
+            color: var(--highlight-color);
+            text-shadow: 0 0 8px var(--highlight-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .highlight::after, .interactive-text.highlighted::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--highlight-color);
+            box-shadow: 0 0 8px var(--highlight-color);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        .highlight:hover::after, .interactive-text.highlighted::after {
+            transform: scaleX(1);
+        }
+        .viz-container {
+            position: relative;
+            width: 100%;
+            height: 380px;
+            max-height: 450px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+        }
+        .viz-container canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .viz-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .tooltip {
+            position: absolute;
+            background-color: rgba(26, 26, 26, 0.95);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+            max-width: 250px;
+            backdrop-filter: blur(5px);
+        }
+        .animation-controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .animation-btn {
+            background: linear-gradient(145deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-main);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0, 255, 157, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .animation-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: translateX(-100%);
+        }
+        .animation-btn:hover::before {
+            animation: shine 1s ease;
+        }
+        .animation-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 255, 157, 0.5);
+        }
+        .animation-btn:disabled {
+            background: var(--border-color);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--border-color);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-dot.active {
+            background-color: var(--accent-primary);
+            box-shadow: 0 0 10px var(--accent-primary);
+            transform: scale(1.2);
+        }
+        .interactive-element {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .interactive-element:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 5px var(--neon-yellow));
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .legend-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            box-shadow: 0 0 5px currentColor;
+        }
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+        }
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        .pulse {
+            animation: pulse 2s infinite ease-in-out;
+        }
+        .neon-border {
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 10px var(--neon-blue), inset 0 0 10px var(--neon-blue);
+        }
+        .mobile-tap-area {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 5;
+        }
+        /* Melhorias de responsividade */
+        @media (max-width: 768px) {
+            .section-title {
+                font-size: 2rem;
+            }
+            .viz-container {
+                height: 300px;
+            }
+            .animation-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            .animation-btn {
+                width: 80%;
+            }
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="antialiased">
+
+    <header class="bg-[#1A1A1A] backdrop-blur-md sticky top-0 z-50 shadow-sm border-b border-[#333333]">
+        <div class="container mx-auto px-4">
+            <nav class="flex items-center justify-between h-16">
+                <h1 class="text-xl font-bold text-[#00FF9D]">Morfologia Bacteriana</h1>
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="#fundamentos" class="nav-link text-sm font-semibold pb-1">Fundamentos</a>
+                    <a href="#coloracao" class="nav-link text-sm font-semibold pb-1">Coloração</a>
+                    <a href="#fagocitose" class="nav-link text-sm font-semibold pb-1">Fagocitose</a>
+                    <a href="#patogenos" class="nav-link text-sm font-semibold pb-1">Patógenos</a>
+                    <a href="#meningite" class="nav-link text-sm font-semibold pb-1">Meningite</a>
+                </div>
+                <div class="md:hidden">
+                     <select id="mobile-nav" class="bg-[#1A1A1A] border border-[#333333] rounded-md p-2 text-white">
+                        <option value="#fundamentos">Fundamentos</option>
+                        <option value="#coloracao">Coloração</option>
+                        <option value="#fagocitose">Fagocitose</option>
+                        <option value="#patogenos">Patógenos</option>
+                        <option value="#meningite">Meningite</option>
+                    </select>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 md:py-12">
+
+        <section id="fundamentos" class="mb-16 scroll-mt-20">
+            <h2 class="section-title">Fundamentos da Estrutura Bacteriana</h2>
+            <p class="section-subtitle">Passe o mouse ou toque nos componentes da ilustração para destacá-los na descrição. Clique na ilustração para alternar entre Gram-positiva e Gram-negativa.</p>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="content-card p-6">
+                    <h3 id="gramTitle" class="text-2xl font-semibold mb-4 text-center text-[#00F3FF]"></h3>
+                    <div id="gramDescription" class="space-y-4 text-sm"></div>
+                    <div class="legend mt-8">
+                        <div class="legend-item" data-id="pg">
+                            <div class="legend-color" style="background-color: #00FF9D;"></div>
+                            <span>Peptideoglicano</span>
+                        </div>
+                        <div class="legend-item" data-id="teichoic">
+                            <div class="legend-color" style="background-color: #00B8FF;"></div>
+                            <span>Ácidos Teicoicos</span>
+                        </div>
+                        <div class="legend-item" data-id="outer-membrane">
+                            <div class="legend-color" style="background-color: #FF00FF;"></div>
+                            <span>Membrana Externa</span>
+                        </div>
+                        <div class="legend-item" data-id="lps">
+                            <div class="legend-color" style="background-color: #FFFF00;"></div>
+                            <span>LPS (Endotoxina)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-card p-6 flex flex-col items-center">
+                    <div class="viz-container w-full max-w-lg mx-auto neon-border">
+                         <canvas id="gramCanvas"></canvas>
+                         <div id="gramOverlay" class="viz-overlay"></div>
+                         <div class="mobile-tap-area" id="gramMobileTap"></div>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <button id="toggleGramBtn" class="animation-btn">Alternar para Gram-Negativa</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="coloracao" class="mb-16 scroll-mt-20">
+            <h2 class="section-title">Processo da Coloração de Gram</h2>
+            <p class="section-subtitle">Clique nos botões para avançar ou retroceder no processo passo a passo e entender como as bactérias são classificadas. Observe as bactérias roxas (Gram+) e rosas (Gram-).</p>
+
+            <div class="content-card p-6 flex flex-col items-center">
+                <div class="viz-container w-full max-w-2xl mx-auto mb-6 neon-border">
+                    <canvas id="gramStainCanvas"></canvas>
+                    <div class="mobile-tap-area" id="gramStainMobileTap"></div>
+                </div>
+                <div class="animation-controls">
+                    <button id="prevGramStainBtn" class="animation-btn" disabled>Anterior</button>
+                    <button id="nextGramStainBtn" class="animation-btn">Próximo</button>
+                </div>
+                <div class="step-indicator">
+                    <div class="step-dot" data-step="1"></div>
+                    <div class="step-dot" data-step="2"></div>
+                    <div class="step-dot" data-step="3"></div>
+                    <div class="step-dot" data-step="4"></div>
+                </div>
+                <p id="gramStainStepText" class="mt-4 text-center font-medium text-[#B0B0B0]">Clique em "Próximo" para iniciar o processo.</p>
+            </div>
+        </section>
+
+        <section id="fagocitose" class="mb-16 scroll-mt-20">
+            <h2 class="section-title">Opsonização e Fagocitose</h2>
+            <p class="section-subtitle">As bactérias utilizam mecanismos para fugir da resposta imune. Clique para ver como a opsonização marca a bactéria para destruição.</p>
+            <div class="content-card p-6 flex flex-col items-center">
+                <div class="viz-container w-full max-w-2xl mx-auto mb-6 neon-border">
+                    <canvas id="opsonizationCanvas"></canvas>
+                    <div class="mobile-tap-area" id="opsonizationMobileTap"></div>
+                </div>
+                <div class="animation-controls">
+                    <button id="prevOpsonizationBtn" class="animation-btn" disabled>Anterior</button>
+                    <button id="nextOpsonizationBtn" class="animation-btn">Próximo</button>
+                </div>
+                <div class="step-indicator">
+                    <div class="step-dot" data-step="1"></div>
+                    <div class="step-dot" data-step="2"></div>
+                    <div class="step-dot" data-step="3"></div>
+                    <div class="step-dot" data-step="4"></div>
+                </div>
+                <p id="opsonizationStepText" class="mt-4 text-center font-medium text-[#B0B0B0]">Clique em "Próximo" para iniciar a animação.</p>
+            </div>
+        </section>
+
+        <section id="patogenos" class="mb-16 scroll-mt-20">
+            <h2 class="section-title">Galeria de Patógenos</h2>
+            <p class="section-subtitle">Selecione uma bactéria para explorar suas características e a morfologia das infecções que ela causa.</p>
+            <div id="pathogen-selector" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
+            </div>
+            <div id="pathogen-details" class="content-card p-6 min-h-[450px] transition-all duration-300">
+                <p class="text-center text-[#B0B0B0]">Selecione um patógeno acima para ver os detalhes e as ilustrações.</p>
+            </div>
+        </section>
+        
+        <section id="meningite" class="scroll-mt-20">
+            <h2 class="section-title">Estudo de Caso: Meningite Bacteriana</h2>
+            <p class="section-subtitle">A infecção das meninges por Neisseria meningitidis é um exemplo dramático da patogênese bacteriana.</p>
+            
+            <div>
+                <h3 class="text-2xl font-semibold mb-6 text-center text-[#00F3FF]">Aspectos Morfológicos</h3>
+                <div class="content-card p-6 space-y-6">
+                    <p class="text-justify"><strong>Inspeção Macroscópica:</strong> O cérebro aparece <span class="highlight">edemaciado e congesto</span>. Um exsudato <span class="highlight">purulento</span> (pus) espesso, de cor amarelada ou esverdeada, é visível no espaço subaracnóideo, preenchendo os sulcos cerebrais, como ilustrado na imagem abaixo.</p>
+                    <div class="viz-container w-full max-w-lg mx-auto mb-6 neon-border">
+                        <canvas id="meningitisCanvas"></canvas>
+                        <div class="mobile-tap-area" id="meningitisMobileTap"></div>
+                    </div>
+                    <p class="text-justify"><strong>Microscopia:</strong> A análise microscópica das leptomeninges revela um <span class="highlight">infiltrado inflamatório agudo e denso</span>, predominantemente composto por <span class="highlight">neutrófilos</span>. Bactérias (diplococos Gram-negativos) podem ser visualizadas dentro dos neutrófilos e livres no exsudato. A micrografia eletrônica de varredura (SEM) mostra a <span class="highlight">Neisseria meningitidis</span>, representada como diplococos esféricos, aderida às células ciliadas da mucosa da faringe, mostrando o primeiro passo da colonização.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <script>
+        // Dados para as estruturas Gram-positiva e Gram-negativa
+        const gramData = {
+            'positive': {
+                title: 'Bactéria Gram-Positiva',
+                description: `Sua parede celular é espessa, composta por múltiplas camadas de <span data-id="pg" class="interactive-text highlight">peptideoglicano</span>. Contém <span data-id="teichoic" class="interactive-text highlight">ácidos teicoico e lipoteicoico</span>, que se ancoram na parede e na membrana. Isso permite que a bactéria retenha o corante roxo na coloração de Gram. A espessa camada de peptideoglicano age como uma barreira física, enquanto os ácidos teicoicos medeiam a adesão às superfícies e modulam a resposta imune do hospedeiro.`,
+                elements: {
+                    'pg': { name: 'Peptideoglicano', description: 'Camada espessa que forma a estrutura rígida da parede celular, composta por cadeias de açúcares alternados ligados por peptídeos.', color: '#00FF9D' },
+                    'teichoic': { name: 'Ácidos Teicoicos', description: 'Polímeros de glicerol ou ribitol fosfato que se estendem através da parede celular, mediando adesão e modulando a resposta imune.', color: '#00B8FF' },
+                    'membrane': { name: 'Membrana Citoplasmática', description: 'Bicamada lipídica que envolve o citoplasma, responsável pelo transporte de nutrientes e sinalização celular.', color: '#00F3FF' },
+                    'cytoplasm': { name: 'Citoplasma', description: 'Material gelatinoso que preenche o interior da célula, contendo ribossomos, nutrientes e o nucleoide.', color: '#FF00FF' },
+                    'nucleoid': { name: 'Nucleoide', description: 'Região que contém o DNA bacteriano, não delimitada por membrana nuclear como nas células eucarióticas.', color: '#FFFF00' },
+                    'ribosomes': { name: 'Ribossomos', description: 'Estruturas responsáveis pela síntese proteica, menores que os ribossomos eucarióticos.', color: '#FF5E00' }
+                }
+            },
+            'negative': {
+                title: 'Bactéria Gram-Negativa',
+                description: `Possui uma <span data-id="outer-membrane" class="interactive-text highlight">membrana externa</span> que recobre a fina parede celular de <span data-id="pg" class="interactive-text highlight">peptideoglicano</span>, localizada no espaço <span data-id="periplasm" class="interactive-text highlight">periplasmático</span>. A membrana externa contém <span data-id="porin" class="interactive-text highlight">porinas</span> e, crucialmente, o <span data-id="lps" class="interactive-text highlight">Lipopolissacarídeo (LPS)</span>, uma potente endotoxina. A membrana externa confere resistência a antibióticos e agentes hostis, enquanto o LPS desencadeia uma potente resposta inflamatória no hospedeiro.`,
+                elements: {
+                    'outer-membrane': { name: 'Membrana Externa', description: 'Bicamada lipídica assimétrica contendo lipopolissacarídeo (LPS) na camada externa, conferindo resistência a diversos agentes.', color: '#FF00FF' },
+                    'pg': { name: 'Peptideoglicano', description: 'Camada fina localizada no espaço periplasmático, proporcionando rigidez estrutural à célula.', color: '#00FF9D' },
+                    'periplasm': { name: 'Espaço Periplasmático', description: 'Compartimento entre as membranas interna e externa, contendo enzimas hidrolíticas e proteínas de transporte.', color: '#00B8FF' },
+                    'porin': { name: 'Porinas', description: 'Proteínas que formam canais aquosos na membrana externa, permitindo a passagem seletiva de moléculas pequenas.', color: '#00F3FF' },
+                    'lps': { name: 'Lipopolissacarídeo (LPS)', description: 'Endotoxina potente localizada na membrana externa, responsável por muitos sintomas de infecções como febre e choque séptico.', color: '#FFFF00' },
+                    'membrane': { name: 'Membrana Citoplasmática', description: 'Bicamada lipídica que envolve o citoplasma, contendo sistemas de transporte e produção de energia.', color: '#FF5E00' },
+                    'cytoplasm': { name: 'Citoplasma', description: 'Material gelatinoso que preenche o interior da célula, contendo o nucleoide, ribossomos e inclusões citoplasmáticas.', color: '#FF00FF' },
+                    'nucleoid': { name: 'Nucleoide', description: 'Região que contém o DNA bacteriano circular, organizado por proteínas associadas.', color: '#FFFF00' },
+                    'ribosomes': { name: 'Ribossomos', description: 'Complexos ribonucleoproteicos responsáveis pela síntese de proteínas, alvos de muitos antibióticos.', color: '#00F3FF' }
+                }
+            }
+        };
+
+        // Dados para os patógenos
+        const pathogenData = {
+            'staphylococcus_aureus': {
+                title: 'Staphylococcus aureus',
+                gram: 'Cocos Gram-positivos em cachos',
+                diseases: 'Infecções de pele (abscessos, furúnculos), osteomielite, pneumonia, síndrome do choque tóxico, endocardite, sepse.',
+                morphology: `A lesão característica é o <span class="highlight">abscesso</span>, uma coleção localizada de pus. Microscopicamente, observa-se uma área central de <span class="highlight">necrose liquefativa</span> com incontáveis neutrófilos, rodeada por tecido de granulação. A bactéria induz uma intensa resposta inflamatória <span class="highlight">supurativa</span>. S. aureus produz diversas toxinas e enzimas que contribuem para sua patogenicidade, incluindo a toxina alfa que lysa eritrócitos e outras células.`,
+                microscopic: 'Cocos roxos agrupados em cachos irregulares, semelhantes a cachos de uva, com cerca de 0,5-1,5 μm de diâmetro.',
+                color: '#00FF9D'
+            },
+            'streptococcus_pyogenes': {
+                title: 'Streptococcus pyogenes',
+                gram: 'Cocos Gram-positivos em cadeias',
+                diseases: 'Faringite, escarlatina, erisipela, impetigo, febre reumática, glomerulonefrite pós-estreptocócica.',
+                morphology: `A <span class="highlight">erisipela</span> é uma infecção cutânea característica. Microscopicamente, há um <span class="highlight">edema acentuado da derme e epiderme</span>, com infiltrado inflamatório difuso de neutrófilos. A faringite causa um exsudato purulento nas amígdalas. S. pyogenes produz diversas exotoxinas, incluindo estreptolisinas O e S, que contribuem para a destruição tecidual e disseminação da infecção.`,
+                microscopic: 'Cocos roxos arranjados em cadeias longas, com cerca de 0,6-1,0 μm de diâmetro, frequentemente observados em pares ou cadeias curtas.',
+                color: '#00B8FF'
+            },
+            'corynebacterium_diphtheriae': {
+                title: 'Corynebacterium diphtheriae',
+                gram: 'Bacilo Gram-positivo pleomórfico',
+                diseases: 'Difteria respiratória e cutânea, miocardite, neuropatia periférica.',
+                morphology: 'A lesão clássica é a formação de uma <span class="highlight">pseudomembrana</span> acinzentada, espessa e aderente na faringe e amígdalas, composta por fibrina, neutrófilos, células epiteliais necróticas e bactérias. A toxina diftérica inibe a síntese proteica celular, levando à necrose e formação da pseudomembrana. Em casos graves, a pseudomembrana pode obstruir as vias aéreas.',
+                microscopic: 'Bacilos roxos finos, pleomórficos, frequentemente dispostos em arranjos angulares semelhantes a "letras chinesas", com grânulos metacromáticos visíveis com coloração especial.',
+                color: '#00F3FF'
+            },
+            'clostridium_perfringens': {
+                title: 'Clostridium perfringens',
+                gram: 'Bacilo Gram-positivo anaeróbio',
+                diseases: 'Gangrena gasosa, enterite necrosante, intoxicação alimentar, celulite crepitante.',
+                morphology: 'Na <span class="highlight">gangrena gasosa</span>, as toxinas causam necrose extensa do músculo e tecido, com produção de <span class="highlight">gás</span>. Microscopicamente, observa-se <span class="highlight">necrose de coagulação</span> e um infiltrado inflamatório escasso. C. perfringens produz múltiplas toxinas, incluindo a toxina alfa (fosfolipase C) que contribui para a destruição tecidual e hemólise.',
+                microscopic: 'Bacilos roxos, largos e retos, com extremidades arredondadas, geralmente isolados ou em pares, formando esporos ovais centrais ou subterminais.',
+                color: '#FF00FF'
+            },
+            'mycobacterium_tuberculosis': {
+                title: 'Mycobacterium tuberculosis',
+                gram: 'Bacilo álcool-ácido resistente (BAAR)',
+                diseases: 'Tuberculose pulmonar e extrapulmonar (linfática, miliar, meningea, óssea, renal).',
+                morphology: 'A resposta imune forma <span class="highlight">granulomas</span> para conter a bactéria. O granuloma clássico possui um centro de <span class="highlight">necrose caseosa</span> rodeado por macrófagos epitelioides, células gigantes de Langhans, linfócitos e fibroblastos. A parede celular rica em lipídios confere resistência à degradação e permite a sobrevivência intracelular.',
+                microscopic: 'Bacilos muito finos, retos ou ligeiramente curvos, avermelhados (pela coloração de Ziehl-Neelsen), isolados ou em pequenos grupos, com cerca de 2-4 μm de comprimento.',
+                color: '#FFFF00'
+            },
+            'treponema_pallidum': {
+                title: 'Treponema pallidum',
+                gram: 'Espiroqueta (não corável pelo Gram)',
+                diseases: 'Sífilis primária, secundária, latente e terciária, neurosífilis, sífilis congênita.',
+                morphology: 'A lesão primária é o <span class="highlight">cancro duro</span>, uma úlcera indolor com base limpa e bordas elevadas. Na sífilis terciária, a lesão característica é a <span class="highlight">goma</span>, uma lesão granulomatosa com centro necrótico. O infiltrado inflamatório é de <span class="highlight">plasmócitos</span>, linfócitos e macrófagos. T. pallidum dissemina-se rapidamente via circulação sanguínea e linfática.',
+                microscopic: 'Espiroquetas muito finas, espiraladas, com 6-14 espiras regulares, dificilmente visíveis ao microscópio de luz comum, requerendo microscopia de campo escuro ou imunofluorescência.',
+                color: '#FF5E00'
+            },
+            'neisseria_meningitidis': {
+                title: 'Neisseria meningitidis',
+                gram: 'Diplococo Gram-negativo',
+                diseases: 'Meningite meningocócica, meningococcemia (sepse), rash petequial, síndrome de Waterhouse-Friderichsen.',
+                morphology: 'Causa <span class="highlight">meningite purulenta</span> aguda. O achado macroscópico é um exsudato <span class="highlight">purulento</span> espesso no espaço subaracnóideo. Microscopicamente, há um intenso infiltrado de <span class="highlight">neutrófilos</span>. O <span class="highlight">LPS</span> (endotoxina) causa danos vasculares, coagulação intravascular disseminada e rash petequial. A capsula polissacarídica confere resistência à fagocitose.',
+                microscopic: 'Diplococos Gram-negativos, com formato de grãos de café juxtapostos, frequentemente localizados dentro de neutrófilos, com cerca de 0,6-1,0 μm de diâmetro.',
+                color: '#00F3FF'
+            }
+        };
+
+        // Estados e variáveis globais
+        let gramState = 'positive';
+        let gramStainStep = 0;
+        let opsonizationStep = 0;
+        let activePathogen = null;
+        let hoveredElement = null;
+        let highlightedElement = null;
+        
+        // Elementos do DOM
+        const gramCanvas = document.getElementById('gramCanvas');
+        const gramCtx = gramCanvas.getContext('2d');
+        const gramStainCanvas = document.getElementById('gramStainCanvas');
+        const gramStainCtx = gramStainCanvas.getContext('2d');
+        const opsonizationCanvas = document.getElementById('opsonizationCanvas');
+        const opsonizationCtx = opsonizationCanvas.getContext('2d');
+        const meningitisCanvas = document.getElementById('meningitisCanvas');
+        const meningitisCtx = meningitisCanvas.getContext('2d');
+        const tooltip = document.getElementById('tooltip');
+
+        // Funções de desenho
+        function drawGramIllustration(ctx, type, highlightId = null) {
+            const canvas = ctx.canvas;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const scale = Math.min(canvas.width, canvas.height) / 500;
+            
+            // Coordenadas centrais
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // Desenhar elementos comuns
+            const drawCommonElements = () => {
+                // Citoplasma
+                ctx.fillStyle = highlightId === 'cytoplasm' ? '#FF00FF' : 'rgba(255, 0, 255, 0.3)';
+                if (highlightId === 'cytoplasm') {
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#FF00FF';
+                }
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 100 * scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Nucleoide
+                ctx.fillStyle = highlightId === 'nucleoid' ? '#FFFF00' : 'rgba(255, 255, 0, 0.5)';
+                if (highlightId === 'nucleoid') {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#FFFF00';
+                }
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 35 * scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Ribossomos
+                ctx.fillStyle = highlightId === 'ribosomes' ? '#FF5E00' : 'rgba(255, 94, 0, 0.6)';
+                for (let i = 0; i < 30; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 80 * scale;
+                    const x = centerX + Math.cos(angle) * distance;
+                    const y = centerY + Math.sin(angle) * distance;
+                    const size = 3 * scale;
+                    
+                    if (highlightId === 'ribosomes') {
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = '#FF5E00';
+                    }
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+                
+                // Membrana citoplasmática
+                ctx.strokeStyle = highlightId === 'membrane' ? '#00F3FF' : '#00B8FF';
+                ctx.lineWidth = 3 * scale;
+                if (highlightId === 'membrane') {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#00F3FF';
+                }
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 105 * scale, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            };
+            
+            if (type === 'positive') {
+                drawCommonElements();
+                
+                // Parede celular (peptideoglicano espesso)
+                ctx.strokeStyle = highlightId === 'pg' ? '#00FF9D' : '#00CC7D';
+                ctx.lineWidth = 25 * scale;
+                if (highlightId === 'pg') {
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#00FF9D';
+                }
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 120 * scale, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                
+                // Ácidos teicoicos (linhas saindo da parede)
+                ctx.strokeStyle = highlightId === 'teichoic' ? '#00B8FF' : '#0095CC';
+                ctx.lineWidth = 2 * scale;
+                if (highlightId === 'teichoic') {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#00B8FF';
+                }
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i * Math.PI * 2) / 12;
+                    const startX = centerX + Math.cos(angle) * (110 * scale);
+                    const startY = centerY + Math.sin(angle) * (110 * scale);
+                    const endX = centerX + Math.cos(angle) * (140 * scale);
+                    const endY = centerY + Math.sin(angle) * (140 * scale);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
+                
+            } else {
+                drawCommonElements();
+                
+                // Peptideoglicano (camada fina)
+                ctx.strokeStyle = highlightId === 'pg' ? '#00FF9D' : '#00CC7D';
+                ctx.lineWidth = 5 * scale;
+                if (highlightId === 'pg') {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#00FF9D';
+                }
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 115 * scale, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                
+                // Espaço periplasmático
+                ctx.fillStyle = highlightId === 'periplasm' ? 'rgba(0, 184, 255, 0.6)' : 'rgba(0, 184, 255, 0.3)';
+                if (highlightId === 'periplasm') {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#00B8FF';
+                }
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 125 * scale, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, 110 * scale, 0, Math.PI * 2, true);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Membrana externa
+                ctx.strokeStyle = highlightId === 'outer-membrane' ? '#FF00FF' : '#CC00CC';
+                ctx.lineWidth = 3 * scale;
+                if (highlightId === 'outer-membrane') {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#FF00FF';
+                }
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 130 * scale, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                
+                // LPS (na membrana externa)
+                ctx.strokeStyle = highlightId === 'lps' ? '#FFFF00' : '#CCCC00';
+                ctx.lineWidth = 2 * scale;
+                if (highlightId === 'lps') {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#FFFF00';
+                }
+                for (let i = 0; i < 16; i++) {
+                    const angle = (i * Math.PI * 2) / 16;
+                    const startX = centerX + Math.cos(angle) * (130 * scale);
+                    const startY = centerY + Math.sin(angle) * (130 * scale);
+                    const endX = centerX + Math.cos(angle) * (145 * scale);
+                    const endY = centerY + Math.sin(angle) * (145 * scale);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
+                
+                // Porinas (na membrana externa)
+                ctx.fillStyle = highlightId === 'porin' ? '#00F3FF' : '#00C2CC';
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i * Math.PI * 2) / 8;
+                    const x = centerX + Math.cos(angle) * (130 * scale);
+                    const y = centerY + Math.sin(angle) * (130 * scale);
+                    const size = 5 * scale;
+                    
+                    if (highlightId === 'porin') {
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = '#00F3FF';
+                    }
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            }
+        }
+        
+        function drawGramStain(ctx, step) {
+            const canvas = ctx.canvas;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const scale = Math.min(canvas.width, canvas.height) / 500;
+            
+            // Desenhar fundo de microscópio
+            ctx.fillStyle = '#1A1A1A';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Adicionar grade de microscópio
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            const gridSize = 50 * scale;
+            for (let x = 0; x <= canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Desenhar bactérias
+            const bacteria = [
+                {x: canvas.width * 0.3, y: canvas.height * 0.4, type: 'pos', radius: 30 * scale},
+                {x: canvas.width * 0.5, y: canvas.height * 0.6, type: 'pos', radius: 25 * scale},
+                {x: canvas.width * 0.7, y: canvas.height * 0.4, type: 'neg', radius: 35 * scale},
+                {x: canvas.width * 0.4, y: canvas.height * 0.7, type: 'neg', radius: 28 * scale}
+            ];
+            
+            // Cores baseadas no passo
+            let posColor = '#333333'; // Cinza (não corado)
+            let negColor = '#333333'; // Cinza (não corado)
+            
+            if (step >= 1) { // Cristal violeta
+                posColor = '#8A2BE2'; // Roxo
+                negColor = '#8A2BE2'; // Roxo
+            }
+            
+            if (step >= 3) { // Após álcool (descoloração)
+                negColor = '#333333'; // Cinza (descorado)
+            }
+            
+            if (step >= 4) { // Safranina
+                negColor = '#FF69B4'; // Rosa
+            }
+            
+            // Desenhar as bactérias
+            bacteria.forEach(b => {
+                ctx.fillStyle = b.type === 'pos' ? posColor : negColor;
+                if (b.type === 'pos' && step >= 1) {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = posColor;
+                } else if (b.type === 'neg' && step >= 4) {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = negColor;
+                }
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Adicionar detalhes para bactérias Gram-positivas (cachos)
+                if (b.type === 'pos' && step >= 1) {
+                    ctx.fillStyle = '#4B0082';
+                    for (let i = 0; i < 3; i++) {
+                        const angle = (i * Math.PI * 2) / 3;
+                        const x = b.x + Math.cos(angle) * (b.radius * 0.6);
+                        const y = b.y + Math.sin(angle) * (b.radius * 0.6);
+                        ctx.beginPath();
+                        ctx.arc(x, y, b.radius * 0.4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                
+                // Adicionar forma de bastonete para Gram-negativas
+                if (b.type === 'neg' && step >= 4) {
+                    ctx.fillStyle = '#FF4500';
+                    ctx.beginPath();
+                    ctx.ellipse(b.x, b.y, b.radius * 1.5, b.radius * 0.7, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
+            // Adicionar texto descritivo
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `bold ${16 * scale}px Inter`;
+            ctx.textAlign = 'left';
+            
+            const steps = [
+                'Passo 1: Aplicação de Cristal Violeta - Todas as bactérias ficam roxas',
+                'Passo 2: Aplicação de Iodo - O iodo fixa o corante nas bactérias',
+                'Passo 3: Lavagem com Álcool - As bactérias Gram-negativas perdem a cor',
+                'Passo 4: Aplicação de Safranina - As bactérias Gram-negativas ficam rosas'
+            ];
+            
+            if (step > 0) {
+                // Fundo semitransparente para texto
+                ctx.fillStyle = 'rgba(26, 26, 26, 0.8)';
+                ctx.fillRect(20 * scale, 20 * scale, canvas.width - 40 * scale, 40 * scale);
+                
+                ctx.fillStyle = '#00FF9D';
+                ctx.fillText(steps[step - 1], 30 * scale, 45 * scale);
+            }
+        }
+        
+        function drawOpsonization(ctx, step) {
+            const canvas = ctx.canvas;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const scale = Math.min(canvas.width, canvas.height) / 500;
+            
+            // Coordenadas centrais
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // Desenhar fundo
+            ctx.fillStyle = '#1A1A1A';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Desenhar bactéria (sempre presente)
+            const bacteriumX = centerX - 150 * scale;
+            const bacteriumY = centerY;
+            const bacteriumRadius = 40 * scale;
+            
+            ctx.fillStyle = '#8A2BE2';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#8A2BE2';
+            ctx.beginPath();
+            ctx.arc(bacteriumX, bacteriumY, bacteriumRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // Desenhar fagócito (sempre presente)
+            const phagocyteX = centerX + 150 * scale;
+            const phagocyteY = centerY;
+            const phagocyteRadius = 80 * scale;
+            
+            ctx.fillStyle = '#9370DB';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#9370DB';
+            ctx.beginPath();
+            ctx.arc(phagocyteX, phagocyteY, phagocyteRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // Texto descritivo
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `bold ${16 * scale}px Inter`;
+            ctx.textAlign = 'left';
+            
+            const stepsText = [
+                '1. Bactéria presente no organismo',
+                '2. Opsonização: Anticorpos e complemento ligam-se à bactéria',
+                '3. Reconhecimento: Fagócito identifica a bactéria opsonizada',
+                '4. Fagocitose: Bactéria é englobada e destruída'
+            ];
+            
+            if (step > 0) {
+                // Fundo semitransparente para texto
+                ctx.fillStyle = 'rgba(26, 26, 26, 0.8)';
+                ctx.fillRect(20 * scale, 20 * scale, canvas.width - 40 * scale, 40 * scale);
+                
+                ctx.fillStyle = '#00FF9D';
+                ctx.fillText(stepsText[step - 1], 30 * scale, 45 * scale);
+            }
+            
+            // Elementos baseados no passo
+            if (step >= 1) {
+                // Desenhar anticorpos (opsoninas)
+                ctx.strokeStyle = '#FF0000';
+                ctx.lineWidth = 2 * scale;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#FF0000';
+                
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i * Math.PI * 2) / 8;
+                    const startX = bacteriumX + Math.cos(angle) * bacteriumRadius;
+                    const startY = bacteriumY + Math.sin(angle) * bacteriumRadius;
+                    const endX = bacteriumX + Math.cos(angle) * (bacteriumRadius + 30 * scale);
+                    const endY = bacteriumY + Math.sin(angle) * (bacteriumRadius + 30 * scale);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    
+                    // Forma de "Y" dos anticorpos
+                    const branchAngle = Math.PI / 6;
+                    ctx.lineTo(endX + Math.cos(angle + branchAngle) * 15 * scale, 
+                              endY + Math.sin(angle + branchAngle) * 15 * scale);
+                    ctx.moveTo(endX, endY);
+                    ctx.lineTo(endX + Math.cos(angle - branchAngle) * 15 * scale, 
+                              endY + Math.sin(angle - branchAngle) * 15 * scale);
+                    ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
+            }
+            
+            if (step >= 2) {
+                // Desenhar receptores no fagócito
+                ctx.fillStyle = '#32CD32';
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = '#32CD32';
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i * Math.PI * 2) / 12;
+                    const x = phagocyteX + Math.cos(angle) * phagocyteRadius;
+                    const y = phagocyteY + Math.sin(angle) * phagocyteRadius;
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, 5 * scale, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+                
+                // Desenhar ligação entre opsoninas e receptores
+                if (step >= 2) {
+                    ctx.strokeStyle = 'rgba(50, 205, 50, 0.5)';
+                    ctx.lineWidth = 1 * scale;
+                    ctx.setLineDash([5, 5]);
+                    
+                    for (let i = 0; i < 4; i++) {
+                        const angle = (i * Math.PI * 2) / 4;
+                        const startX = bacteriumX + Math.cos(angle) * (bacteriumRadius + 30 * scale);
+                        const startY = bacteriumY + Math.sin(angle) * (bacteriumRadius + 30 * scale);
+                        
+                        const endAngle = angle + Math.PI; // Lado oposto no fagócito
+                        const endX = phagocyteX + Math.cos(endAngle) * phagocyteRadius;
+                        const endY = phagocyteY + Math.sin(endAngle) * phagocyteRadius;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(startX, startY);
+                        ctx.lineTo(endX, endY);
+                        ctx.stroke();
+                    }
+                    ctx.setLineDash([]);
+                }
+            }
+            
+            if (step >= 3) {
+                // Desenhar pseudópodes se estendendo
+                ctx.fillStyle = '#9370DB';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#9370DB';
+                
+                for (let i = 0; i < 2; i++) {
+                    const direction = i === 0 ? -1 : 1;
+                    const startAngle = direction * Math.PI / 3;
+                    
+                    ctx.beginPath();
+                    ctx.arc(phagocyteX, phagocyteY, phagocyteRadius, startAngle, startAngle + direction * Math.PI / 4);
+                    ctx.lineTo(phagocyteX - 100 * scale * direction, phagocyteY + 20 * scale);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+            }
+            
+            if (step >= 4) {
+                // Desenhar bactéria dentro do fagócito
+                ctx.fillStyle = '#8A2BE2';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#8A2BE2';
+                ctx.beginPath();
+                ctx.arc(phagocyteX, phagocyteY, bacteriumRadius * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Desenhar lisossomos se fundindo
+                ctx.fillStyle = '#FF6347';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#FF6347';
+                for (let i = 0; i < 3; i++) {
+                    const angle = (i * Math.PI * 2) / 3;
+                    const x = phagocyteX + Math.cos(angle) * (phagocyteRadius * 0.5);
+                    const y = phagocyteY + Math.sin(angle) * (phagocyteRadius * 0.5);
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, 10 * scale, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Linhas conectando aos fagossomos
+                    ctx.strokeStyle = '#FF6347';
+                    ctx.lineWidth = 2 * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(phagocyteX, phagocyteY);
+                    ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
+            }
+        }
+        
+        function drawPathogenMicroscopy(ctx, pathogenKey) {
+            const canvas = ctx.canvas;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const scale = Math.min(canvas.width, canvas.height) / 500;
+            
+            // Fundo de microscópio
+            ctx.fillStyle = '#1A1A1A';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Adicionar grade de microscópio
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            const gridSize = 50 * scale;
+            for (let x = 0; x <= canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            const pathogen = pathogenData[pathogenKey];
+            if (!pathogen) return;
+            
+            ctx.fillStyle = pathogen.color;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = pathogen.color;
+            
+            switch(pathogenKey) {
+                case 'staphylococcus_aureus':
+                    // Cocos em cachos
+                    for (let i = 0; i < 5; i++) {
+                        for (let j = 0; j < 5; j++) {
+                            const x = canvas.width * (0.2 + i * 0.15);
+                            const y = canvas.height * (0.2 + j * 0.15);
+                            const radius = 12 * scale;
+                            
+                            ctx.beginPath();
+                            ctx.arc(x, y, radius, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                    break;
+                    
+                case 'streptococcus_pyogenes':
+                    // Cocos em cadeias
+                    for (let i = 0; i < 4; i++) {
+                        for (let j = 0; j < 8; j++) {
+                            const x = canvas.width * (0.1 + j * 0.1);
+                            const y = canvas.height * (0.2 + i * 0.2);
+                            const radius = 10 * scale;
+                            
+                            ctx.beginPath();
+                            ctx.arc(x, y, radius, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                    break;
+                    
+                case 'corynebacterium_diphtheriae':
+                    // Bacilos em forma de letras chinesas
+                    for (let i = 0; i < 5; i++) {
+                        for (let j = 0; j < 5; j++) {
+                            const x = canvas.width * (0.1 + i * 0.2);
+                            const y = canvas.height * (0.1 + j * 0.2);
+                            const width = 30 * scale;
+                            const height = 8 * scale;
+                            const angle = Math.PI / 4 * (i - 2) / 2;
+                            
+                            ctx.save();
+                            ctx.translate(x, y);
+                            ctx.rotate(angle);
+                            ctx.fillRect(-width/2, -height/2, width, height);
+                            ctx.restore();
+                        }
+                    }
+                    break;
+                    
+                case 'clostridium_perfringens':
+                    // Bacilos largos
+                    for (let i = 0; i < 4; i++) {
+                        for (let j = 0; j < 4; j++) {
+                            const x = canvas.width * (0.1 + i * 0.25);
+                            const y = canvas.height * (0.1 + j * 0.25);
+                            const width = 40 * scale;
+                            const height = 15 * scale;
+                            
+                            ctx.beginPath();
+                            ctx.ellipse(x, y, width/2, height/2, 0, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                    break;
+                    
+                case 'mycobacterium_tuberculosis':
+                    // Bacilos finos (vermelhos pela coloração especial)
+                    ctx.fillStyle = '#B22222';
+                    ctx.shadowColor = '#B22222';
+                    for (let i = 0; i < 6; i++) {
+                        for (let j = 0; j < 6; j++) {
+                            const x = canvas.width * (0.1 + i * 0.15);
+                            const y = canvas.height * (0.1 + j * 0.15);
+                            const width = 25 * scale;
+                            const height = 3 * scale;
+                            const angle = Math.PI / 4 * (i - 3) / 3;
+                            
+                            ctx.save();
+                            ctx.translate(x, y);
+                            ctx.rotate(angle);
+                            ctx.fillRect(-width/2, -height/2, width, height);
+                            ctx.restore();
+                        }
+                    }
+                    break;
+                    
+                case 'treponema_pallidum':
+                    // Espiroquetas (formato espiralado)
+                    ctx.strokeStyle = '#2F4F4F';
+                    ctx.shadowColor = '#2F4F4F';
+                    ctx.lineWidth = 2 * scale;
+                    
+                    for (let i = 0; i < 4; i++) {
+                        for (let j = 0; j < 4; j++) {
+                            const centerX = canvas.width * (0.1 + i * 0.25);
+                            const centerY = canvas.height * (0.1 + j * 0.25);
+                            const radius = 15 * scale;
+                            const coils = 3;
+                            
+                            ctx.beginPath();
+                            for (let a = 0; a < Math.PI * 2 * coils; a += 0.1) {
+                                const x = centerX + Math.cos(a) * radius;
+                                const y = centerY + Math.sin(a) * (radius * 0.3) + a * 2 * scale;
+                                if (a === 0) {
+                                    ctx.moveTo(x, y);
+                                } else {
+                                    ctx.lineTo(x, y);
+                                }
+                            }
+                            ctx.stroke();
+                        }
+                    }
+                    break;
+                    
+                case 'neisseria_meningitidis':
+                    // Diplococos (aos pares)
+                    for (let i = 0; i < 4; i++) {
+                        for (let j = 0; j < 4; j++) {
+                            const x = canvas.width * (0.1 + i * 0.25);
+                            const y = canvas.height * (0.1 + j * 0.25);
+                            const radius = 10 * scale;
+                            
+                            // Dois cocos juntos (formato de grão de café)
+                            ctx.beginPath();
+                            ctx.arc(x - radius/2, y, radius, 0, Math.PI * 2);
+                            ctx.arc(x + radius/2, y, radius, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                    break;
+            }
+            ctx.shadowBlur = 0;
+            
+            // Adicionar título
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `bold ${18 * scale}px Inter`;
+            ctx.textAlign = 'center';
+            ctx.fillText(pathogen.title, canvas.width / 2, 30 * scale);
+        }
+        
+        function drawMeningitis(ctx) {
+            const canvas = ctx.canvas;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const scale = Math.min(canvas.width, canvas.height) / 500;
+            
+            // Desenhar cérebro
+            ctx.fillStyle = '#5A3825';
+            ctx.beginPath();
+            ctx.ellipse(canvas.width / 2, canvas.height / 2, 200 * scale, 150 * scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Desenhar sulcos cerebrais
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 2 * scale;
+            
+            for (let i = 0; i < 5; i++) {
+                const y = canvas.height * (0.3 + i * 0.1);
+                ctx.beginPath();
+                ctx.moveTo(canvas.width * 0.3, y);
+                ctx.bezierCurveTo(
+                    canvas.width * 0.4, y + 10 * scale,
+                    canvas.width * 0.6, y - 10 * scale,
+                    canvas.width * 0.7, y
+                );
+                ctx.stroke();
+            }
+            
+            // Desenhar exsudato purulento (pus)
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.7)';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#FFD700';
+            for (let i = 0; i < 8; i++) {
+                const x = canvas.width * (0.35 + i * 0.04);
+                const y = canvas.height * (0.4 + Math.sin(i) * 0.05);
+                const radius = 15 * scale + Math.random() * 10 * scale;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.shadowBlur = 0;
+            
+            // Desenhar vasos sanguíneos congestos
+            ctx.strokeStyle = '#8B0000';
+            ctx.lineWidth = 3 * scale;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#8B0000';
+            
+            for (let i = 0; i < 3; i++) {
+                const y = canvas.height * (0.5 + i * 0.1);
+                ctx.beginPath();
+                ctx.moveTo(canvas.width * 0.4, y);
+                ctx.bezierCurveTo(
+                    canvas.width * 0.45, y - 15 * scale,
+                    canvas.width * 0.55, y + 15 * scale,
+                    canvas.width * 0.6, y
+                );
+                ctx.stroke();
+            }
+            ctx.shadowBlur = 0;
+            
+            // Adicionar texto
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `bold ${16 * scale}px Inter`;
+            ctx.textAlign = 'center';
+            ctx.fillText('Cérebro com meningite bacteriana - Exsudato purulento visível', canvas.width / 2, 30 * scale);
+        }
+
+        // Funções de utilidade
+        function resizeCanvas(canvas) {
+            const parent = canvas.parentElement;
+            const displayWidth = parent.clientWidth;
+            const displayHeight = parent.clientHeight;
+            
+            if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+                canvas.width = displayWidth;
+                canvas.height = displayHeight;
+                return true;
+            }
+            return false;
+        }
+        
+        function updateAllVisualizations() {
+            // Redimensionar e redesenhar todos os canvases
+            if (resizeCanvas(gramCanvas)) drawGramIllustration(gramCtx, gramState, highlightedElement);
+            if (resizeCanvas(gramStainCanvas)) drawGramStain(gramStainCtx, gramStainStep);
+            if (resizeCanvas(opsonizationCanvas)) drawOpsonization(opsonizationCtx, opsonizationStep);
+            if (resizeCanvas(meningitisCanvas)) drawMeningitis(meningitisCtx);
+            
+            if (activePathogen) {
+                const pathogenCanvas = document.getElementById('pathogenCanvas');
+                if (pathogenCanvas && resizeCanvas(pathogenCanvas)) {
+                    const ctx = pathogenCanvas.getContext('2d');
+                    drawPathogenMicroscopy(ctx, activePathogen);
+                }
+            }
+        }
+        
+        function updateGramContent() {
+            const data = gramData[gramState];
+            document.getElementById('gramTitle').textContent = data.title;
+            document.getElementById('gramDescription').innerHTML = data.description;
+            
+            // Atualizar botão de toggle
+            document.getElementById('toggleGramBtn').textContent = 
+                gramState === 'positive' ? 'Alternar para Gram-Negativa' : 'Alternar para Gram-Positiva';
+            
+            // Adicionar event listeners para os textos interativos
+            document.querySelectorAll('.interactive-text').forEach(el => {
+                el.addEventListener('mouseenter', handleTextHover);
+                el.addEventListener('mouseleave', handleTextHoverEnd);
+                el.addEventListener('click', handleTextClick);
+            });
+            
+            // Adicionar event listeners para a legenda
+            document.querySelectorAll('.legend-item').forEach(item => {
+                item.addEventListener('mouseenter', handleLegendHover);
+                item.addEventListener('mouseleave', handleLegendHoverEnd);
+                item.addEventListener('click', handleLegendClick);
+            });
+        }
+        
+        function handleTextHover(e) {
+            const elementId = e.target.getAttribute('data-id');
+            hoveredElement = elementId;
+            
+            // Destacar texto
+            e.target.classList.add('highlighted');
+            
+            // Destacar elemento na ilustração
+            drawGramIllustration(gramCtx, gramState, elementId);
+            
+            // Mostrar tooltip
+            const elementData = gramData[gramState].elements[elementId];
+            if (elementData) {
+                tooltip.textContent = elementData.name + ': ' + elementData.description;
+                tooltip.style.opacity = '1';
+                
+                // Posicionar tooltip próximo ao cursor
+                const rect = e.target.getBoundingClientRect();
+                tooltip.style.left = (rect.left + window.scrollX) + 'px';
+                tooltip.style.top = (rect.bottom + window.scrollY + 5) + 'px';
+            }
+        }
+        
+        function handleTextHoverEnd(e) {
+            const elementId = e.target.getAttribute('data-id');
+            if (hoveredElement === elementId) {
+                hoveredElement = null;
+            }
+            
+            // Remover destaque do texto
+            e.target.classList.remove('highlighted');
+            
+            // Remover destaque da ilustração (a menos que esteja clicado)
+            if (highlightedElement !== elementId) {
+                drawGramIllustration(gramCtx, gramState, highlightedElement);
+            }
+            
+            // Esconder tooltip
+            tooltip.style.opacity = '0';
+        }
+        
+        function handleTextClick(e) {
+            const elementId = e.target.getAttribute('data-id');
+            
+            // Alternar destaque permanente
+            if (highlightedElement === elementId) {
+                highlightedElement = null;
+                e.target.classList.remove('highlighted');
+            } else {
+                highlightedElement = elementId;
+                
+                // Remover destaque de outros elementos
+                document.querySelectorAll('.interactive-text').forEach(el => {
+                    el.classList.remove('highlighted');
+                });
+                
+                // Aplicar destaque a este elemento
+                e.target.classList.add('highlighted');
+            }
+            
+            // Atualizar ilustração
+            drawGramIllustration(gramCtx, gramState, highlightedElement);
+        }
+        
+        function handleLegendHover(e) {
+            const elementId = e.currentTarget.getAttribute('data-id');
+            hoveredElement = elementId;
+            
+            // Destacar elemento na ilustração
+            drawGramIllustration(gramCtx, gramState, elementId);
+            
+            // Mostrar tooltip
+            const elementData = gramData[gramState].elements[elementId];
+            if (elementData) {
+                tooltip.textContent = elementData.name + ': ' + elementData.description;
+                tooltip.style.opacity = '1';
+                
+                // Posicionar tooltip próximo ao item da legenda
+                const rect = e.currentTarget.getBoundingClientRect();
+                tooltip.style.left = (rect.left + window.scrollX) + 'px';
+                tooltip.style.top = (rect.bottom + window.scrollY + 5) + 'px';
+            }
+        }
+        
+        function handleLegendHoverEnd(e) {
+            const elementId = e.currentTarget.getAttribute('data-id');
+            if (hoveredElement === elementId) {
+                hoveredElement = null;
+            }
+            
+            // Remover destaque da ilustração (a menos que esteja clicado)
+            if (highlightedElement !== elementId) {
+                drawGramIllustration(gramCtx, gramState, highlightedElement);
+            }
+            
+            // Esconder tooltip
+            tooltip.style.opacity = '0';
+        }
+        
+        function handleLegendClick(e) {
+            const elementId = e.currentTarget.getAttribute('data-id');
+            
+            // Alternar destaque permanente
+            if (highlightedElement === elementId) {
+                highlightedElement = null;
+            } else {
+                highlightedElement = elementId;
+            }
+            
+            // Atualizar ilustração
+            drawGramIllustration(gramCtx, gramState, highlightedElement);
+            
+            // Rolar até a ilustração
+            document.getElementById('fundamentos').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function handleCanvasHover(e) {
+            if (!hoveredElement) {
+                tooltip.style.opacity = '0';
+                return;
+            }
+            
+            // Posicionar tooltip próximo ao cursor
+            tooltip.style.left = (e.pageX + 10) + 'px';
+            tooltip.style.top = (e.pageY + 10) + 'px';
+            
+            const elementData = gramData[gramState].elements[hoveredElement];
+            if (elementData) {
+                tooltip.textContent = elementData.name + ': ' + elementData.description;
+                tooltip.style.opacity = '1';
+            }
+        }
+        
+        function handleCanvasHoverEnd() {
+            tooltip.style.opacity = '0';
+        }
+        
+        function handleCanvasClick(e) {
+            // Alternar entre Gram-positiva e Gram-negativa
+            gramState = gramState === 'positive' ? 'negative' : 'positive';
+            updateGramContent();
+            drawGramIllustration(gramCtx, gramState, highlightedElement);
+        }
+        
+        function updateStepIndicators(section, currentStep) {
+            const indicators = document.querySelectorAll(`#${section} .step-dot`);
+            indicators.forEach((dot, index) => {
+                if (index < currentStep) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar visualizações
+            updateGramContent();
+            updateAllVisualizations();
+            
+            // Event listeners para a ilustração de Gram
+            document.getElementById('toggleGramBtn').addEventListener('click', handleCanvasClick);
+            gramCanvas.addEventListener('click', handleCanvasClick);
+            gramCanvas.addEventListener('mousemove', handleCanvasHover);
+            gramCanvas.addEventListener('mouseleave', handleCanvasHoverEnd);
+            
+            // Event listeners para mobile
+            document.getElementById('gramMobileTap').addEventListener('click', handleCanvasClick);
+            document.getElementById('gramStainMobileTap').addEventListener('click', function() {
+                document.getElementById('nextGramStainBtn').click();
+            });
+            document.getElementById('opsonizationMobileTap').addEventListener('click', function() {
+                document.getElementById('nextOpsonizationBtn').click();
+            });
+            document.getElementById('meningitisMobileTap').addEventListener('click', function() {
+                // Não há ação específica para a meningite, apenas para evitar que o clique seja ignorado
+            });
+            
+            // Event listeners para a coloração de Gram
+            document.getElementById('nextGramStainBtn').addEventListener('click', () => {
+                if (gramStainStep < 4) {
+                    gramStainStep++;
+                    drawGramStain(gramStainCtx, gramStainStep);
+                    document.getElementById('gramStainStepText').textContent = 
+                        `Passo ${gramStainStep} de 4: ${['Cristal Violeta', 'Iodo', 'Álcool', 'Safranina'][gramStainStep - 1]}`;
+                    updateStepIndicators('coloracao', gramStainStep);
+                }
+                
+                document.getElementById('prevGramStainBtn').disabled = gramStainStep === 0;
+                document.getElementById('nextGramStainBtn').disabled = gramStainStep === 4;
+                
+                // Atualizar indicadores de passo
+                document.querySelectorAll('.step-dot').forEach((dot, index) => {
+                    if (index < gramStainStep) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
+                });
+            });
+            
+            document.getElementById('prevGramStainBtn').addEventListener('click', () => {
+                if (gramStainStep > 0) {
+                    gramStainStep--;
+                    drawGramStain(gramStainCtx, gramStainStep);
+                    document.getElementById('gramStainStepText').textContent = 
+                        gramStainStep > 0 ? 
+                        `Passo ${gramStainStep} de 4: ${['Cristal Violeta', 'Iodo', 'Álcool', 'Safranina'][gramStainStep - 1]}` : 
+                        'Clique em "Próximo" para iniciar o processo.';
+                    updateStepIndicators('coloracao', gramStainStep);
+                }
+                
+                document.getElementById('prevGramStainBtn').disabled = gramStainStep === 0;
+                document.getElementById('nextGramStainBtn').disabled = gramStainStep === 4;
+            });
+            
+            // Event listeners para a opsonização
+            document.getElementById('nextOpsonizationBtn').addEventListener('click', () => {
+                if (opsonizationStep < 4) {
+                    opsonizationStep++;
+                    drawOpsonization(opsonizationCtx, opsonizationStep);
+                    document.getElementById('opsonizationStepText').textContent = 
+                        `Etapa ${opsonizationStep} de 4: ${['Bactéria presente', 'Opsonização', 'Reconhecimento', 'Fagocitose'][opsonizationStep - 1]}`;
+                    updateStepIndicators('fagocitose', opsonizationStep);
+                }
+                
+                document.getElementById('prevOpsonizationBtn').disabled = opsonizationStep === 0;
+                document.getElementById('nextOpsonizationBtn').disabled = opsonizationStep === 4;
+            });
+            
+            document.getElementById('prevOpsonizationBtn').addEventListener('click', () => {
+                if (opsonizationStep > 0) {
+                    opsonizationStep--;
+                    drawOpsonization(opsonizationCtx, opsonizationStep);
+                    document.getElementById('opsonizationStepText').textContent = 
+                        opsonizationStep > 0 ? 
+                        `Etapa ${opsonizationStep} de 4: ${['Bactéria presente', 'Opsonização', 'Reconhecimento', 'Fagocitose'][opsonizationStep - 1]}` : 
+                        'Clique em "Próximo" para iniciar a animação.';
+                    updateStepIndicators('fagocitose', opsonizationStep);
+                }
+                
+                document.getElementById('prevOpsonizationBtn').disabled = opsonizationStep === 0;
+                document.getElementById('nextOpsonizationBtn').disabled = opsonizationStep === 4;
+            });
+            
+            // Event listeners para os indicadores de passo
+            document.querySelectorAll('.step-dot').forEach(dot => {
+                dot.addEventListener('click', function() {
+                    const step = parseInt(this.getAttribute('data-step'));
+                    const section = this.closest('section').id;
+                    
+                    if (section === 'coloracao') {
+                        gramStainStep = step;
+                        drawGramStain(gramStainCtx, gramStainStep);
+                        document.getElementById('gramStainStepText').textContent = 
+                            `Passo ${gramStainStep} de 4: ${['Cristal Violeta', 'Iodo', 'Álcool', 'Safranina'][gramStainStep - 1]}`;
+                        updateStepIndicators('coloracao', gramStainStep);
+                        
+                        document.getElementById('prevGramStainBtn').disabled = gramStainStep === 0;
+                        document.getElementById('nextGramStainBtn').disabled = gramStainStep === 4;
+                    } else if (section === 'fagocitose') {
+                        opsonizationStep = step;
+                        drawOpsonization(opsonizationCtx, opsonizationStep);
+                        document.getElementById('opsonizationStepText').textContent = 
+                            `Etapa ${opsonizationStep} de 4: ${['Bactéria presente', 'Opsonização', 'Reconhecimento', 'Fagocitose'][opsonizationStep - 1]}`;
+                        updateStepIndicators('fagocitose', opsonizationStep);
+                        
+                        document.getElementById('prevOpsonizationBtn').disabled = opsonizationStep === 0;
+                        document.getElementById('nextOpsonizationBtn').disabled = opsonizationStep === 4;
+                    }
+                });
+            });
+            
+            // Inicializar galeria de patógenos
+            const pathogenSelector = document.getElementById('pathogen-selector');
+            const pathogenDetails = document.getElementById('pathogen-details');
+            
+            Object.keys(pathogenData).forEach(key => {
+                const button = document.createElement('button');
+                button.textContent = pathogenData[key].title;
+                button.dataset.key = key;
+                button.className = 'pathogen-btn p-3 rounded-lg font-semibold text-sm focus:outline-none';
+                pathogenSelector.appendChild(button);
+            });
+            
+            pathogenSelector.addEventListener('click', function(e) {
+                if (e.target.nodeName === 'BUTTON') {
+                    const key = e.target.dataset.key;
+                    const data = pathogenData[key];
+                    activePathogen = key;
+                    
+                    document.querySelectorAll('.pathogen-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    
+                    pathogenDetails.innerHTML = `
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-2xl font-bold mb-2 text-[#00F3FF]">${data.title}</h3>
+                                <p class="text-sm font-semibold mb-4 text-[#00FF9D]">${data.gram}</p>
+                                <div class="space-y-4 text-sm">
+                                    <div>
+                                        <h4 class="font-semibold mb-1 text-[#00B8FF]">Principais Doenças</h4>
+                                        <p class="text-sm text-[#B0B0B0]">${data.diseases}</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold mb-1 text-[#00B8FF]">Aspectos Morfológicos</h4>
+                                        <p class="text-sm text-[#B0B0B0]">${data.morphology}</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold mb-1 text-[#00B8FF]">Morfologia Microscópica</h4>
+                                        <p class="text-sm text-[#B0B0B0]">${data.microscopic}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center justify-center p-4">
+                                <h4 class="font-semibold mb-2 text-center text-[#00F3FF]">Aparência ao Microscópio</h4>
+                                <div class="viz-container w-full neon-border">
+                                    <canvas id="pathogenCanvas"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Desenhar a visualização do patógeno
+                    const pathogenCanvas = document.getElementById('pathogenCanvas');
+                    const pathogenCtx = pathogenCanvas.getContext('2d');
+                    resizeCanvas(pathogenCanvas);
+                    drawPathogenMicroscopy(pathogenCtx, key);
+                }
+            });
+            
+            // Desenhar meningite
+            drawMeningitis(meningitisCtx);
+            
+            // Navegação e responsividade
+            window.addEventListener('resize', updateAllVisualizations);
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.toggle('active', link.getAttribute('href').substring(1) === entry.target.id);
+                        });
+                    }
+                });
+            }, { rootMargin: '-50% 0px -50% 0px' });
+            
+            sections.forEach(section => observer.observe(section));
+            
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+            
+            document.getElementById('mobile-nav').addEventListener('change', function(e) {
+                const targetId = e.target.value;
+                document.querySelector(targetId).scrollIntoView({ behavior: 'smooth' });
+            });
+            
+            // Inicializar tooltip
+            document.body.appendChild(tooltip);
+        });
+    </script>
+</body>
+</html>
